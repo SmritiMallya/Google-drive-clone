@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDrive - File Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px 0;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+
+        .nav-section {
+            padding: 10px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #5f6368;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: #f1f3f4;
+            color: #1a73e8;
+        }
+
+        .nav-item.active {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+            border-left-color: #1a73e8;
+        }
+
+        .nav-icon {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .storage-info {
+            padding: 20px;
+            margin-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .storage-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .storage-progress {
+            height: 100%;
+            background: #1a73e8;
+            border-radius: 2px;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 45px 12px 45px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #5f6368;
+        }
+
+        .filter-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #5f6368;
+            cursor: pointer;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
+
+        .btn-secondary:hover {
+            background: #e8eaed;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #1a73e8, #34a853);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Files Grid Styles */
+        .files-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .view-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .view-btn.active {
+            background: #1a73e8;
+            color: white;
+            border-color: #1a73e8;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-color: #1a73e8;
+        }
+
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        .file-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .file-card:hover .file-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: #f1f3f4;
+            border: none;
+            border-radius: 4px;
+            padding: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .action-btn:hover {
+            background: #e8eaed;
+        }
+
+        /* List View Styles */
+        .files-list {
+            display: none;
+        }
+
+        .list-view .files-grid {
+            display: none;
+        }
+
+        .list-view .files-list {
+            display: block;
+        }
+
+        .file-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto auto;
+            gap: 20px;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+
+        .file-row:hover {
+            background: #f8f9fa;
+        }
+
+        .list-icon {
+            font-size: 24px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 200px;
+            }
+            .main-content {
+                margin-left: 200px;
+            }
+            .files-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            .nav-text, .logo h1, .storage-info {
+                display: none;
+            }
+            .main-content {
+                margin-left: 60px;
+            }
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            .search-bar {
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .files-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">📁</span>
+                <h1>CloudDrive</h1>
+            </div>
+            
+            <div class="nav-section">
+                <a href="#" class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">My Drive</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Shared with me</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">🕒</span>
+                    <span class="nav-text">Recent</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">⭐</span>
+                    <span class="nav-text">Starred</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">🗑️</span>
+                    <span class="nav-text">Trash</span>
+                </a>
+            </div>
+
+            <div class="storage-info">
+                <h3>Storage</h3>
+                <div class="storage-bar">
+                    <div class="storage-progress" style="width: 45%"></div>
+                </div>
+                <p>7.2 GB of 15 GB used</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search files and folders">
+                    <span class="filter-icon">⚙️</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary">
+                        <span>+</span> New
+                    </button>
+                    <div class="user-menu">
+                        <div class="user-avatar">U</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="files-section">
+                <div class="section-header">
+                    <h2>My Files</h2>
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="grid">Grid</button>
+                        <button class="view-btn" data-view="list">List</button>
+                    </div>
+                </div>
+
+                <!-- Grid View -->
+                <div class="files-grid">
+                    <!-- Folders -->
+                    <div class="file-card" data-type="folder">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">📁</div>
+                        <div class="file-name">Projects</div>
+                        <div class="file-meta">12 items • 2 days ago</div>
+                    </div>
+
+                    <div class="file-card" data-type="folder">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">📁</div>
+                        <div class="file-name">Documents</div>
+                        <div class="file-meta">8 items • 1 week ago</div>
+                    </div>
+
+                    <div class="file-card" data-type="folder">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">📁</div>
+                        <div class="file-name">Images</div>
+                        <div class="file-meta">23 items • 3 days ago</div>
+                    </div>
+
+                    <!-- Files -->
+                    <div class="file-card" data-type="pdf">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">📄</div>
+                        <div class="file-name">Project Proposal.pdf</div>
+                        <div class="file-meta">2.4 MB • 2 hours ago</div>
+                    </div>
+
+                    <div class="file-card" data-type="spreadsheet">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">📊</div>
+                        <div class="file-name">Budget 2024.xlsx</div>
+                        <div class="file-meta">1.8 MB • Yesterday</div>
+                    </div>
+
+                    <div class="file-card" data-type="document">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">📝</div>
+                        <div class="file-name">Meeting Notes.docx</div>
+                        <div class="file-meta">0.8 MB • 3 days ago</div>
+                    </div>
+
+                    <div class="file-card" data-type="image">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">🖼️</div>
+                        <div class="file-name">Team Photo.jpg</div>
+                        <div class="file-meta">4.2 MB • 5 days ago</div>
+                    </div>
+
+                    <div class="file-card" data-type="video">
+                        <div class="file-actions">
+                            <button class="action-btn" title="Share">🔗</button>
+                            <button class="action-btn" title="More">⋯</button>
+                        </div>
+                        <div class="file-icon">🎬</div>
+                        <div class="file-name">Presentation.mp4</div>
+                        <div class="file-meta">15.7 MB • 1 week ago</div>
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div class="files-list">
+                    <div class="file-row">
+                        <div class="list-icon">📁</div>
+                        <div class="file-name">Projects</div>
+                        <div class="file-meta">12 items</div>
+                        <div class="file-meta">2 days ago</div>
+                        <div class="file-actions">
+                            <button class="action-btn">🔗</button>
+                            <button class="action-btn">⋯</button>
+                        </div>
+                    </div>
+                    <div class="file-row">
+                        <div class="list-icon">📁</div>
+                        <div class="file-name">Documents</div>
+                        <div class="file-meta">8 items</div>
+                        <div class="file-meta">1 week ago</div>
+                        <div class="file-actions">
+                            <button class="action-btn">🔗</button>
+                            <button class="action-btn">⋯</button>
+                        </div>
+                    </div>
+                    <div class="file-row">
+                        <div class="list-icon">📄</div>
+                        <div class="file-name">Project Proposal.pdf</div>
+                        <div class="file-meta">2.4 MB</div>
+                        <div class="file-meta">2 hours ago</div>
+                        <div class="file-actions">
+                            <button class="action-btn">🔗</button>
+                            <button class="action-btn">⋯</button>
+                        </div>
+                    </div>
+                    <div class="file-row">
+                        <div class="list-icon">📊</div>
+                        <div class="file-name">Budget 2024.xlsx</div>
+                        <div class="file-meta">1.8 MB</div>
+                        <div class="file-meta">Yesterday</div>
+                        <div class="file-actions">
+                            <button class="action-btn">🔗</button>
+                            <button class="action-btn">⋯</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // View toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewButtons = document.querySelectorAll('.view-btn');
+            const filesSection = document.querySelector('.files-section');
+
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    viewButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Toggle view
+                    if (this.dataset.view === 'list') {
+                        filesSection.classList.add('list-view');
+                    } else {
+                        filesSection.classList.remove('list-view');
+                    }
+                });
+            });
+
+            // File card click handling
+            const fileCards = document.querySelectorAll('.file-card');
+            fileCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const fileType = this.dataset.type;
+                    const fileName = this.querySelector('.file-name').textContent;
+                    
+                    if (fileType === 'folder') {
+                        alert(`Opening folder: ${fileName}`);
+                        // In a real app, this would navigate into the folder
+                    } else {
+                        alert(`Opening file: ${fileName}`);
+                        // In a real app, this would open the file preview
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
